@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy"
+ content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
 <title>EvidenceForge X | Investigation Workspace</title>
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
 
+<body>
 <header class="top">
   <div class="brand">
     <span class="mark">✳</span>
@@ -32,22 +33,19 @@
   <div class="eyebrow">
     TRACE THE STORY. PRESERVE THE UNCERTAINTY.
   </div>
-
   <h1>
     Evidence reconstruction,
-    <br>
     <span>with every assumption visible.</span>
   </h1>
-
   <p>
     Review chronological observations, evidence relationships
-    and provenance. This prototype uses deterministic rules —
-    it does not determine culpability.
+    and provenance. Compare competing explanations and
+    examine the impact of evidence exclusion.
+    This prototype does not determine culpability.
   </p>
 </section>
 
 <section class="workspace">
-
   <aside class="input">
     <div class="sectionhead">
       <div>
@@ -64,20 +62,15 @@
     <textarea
       id="caseData"
       spellcheck="false"
-      aria-label="Case JSON"
-    ></textarea>
+      aria-label="Case JSON"></textarea>
 
     <div class="actions">
       <label class="upload" for="fileInput">
         ↑ Open JSON
       </label>
-
-      <input
-        type="file"
+      <input type="file"
         accept=".json,application/json"
-        id="fileInput"
-      >
-
+        id="fileInput">
       <button class="primary" id="analyze" type="button">
         Analyze case →
       </button>
@@ -86,7 +79,7 @@
     <p class="hint">
       Analysis runs within this browser tab.
       Do not use real case files on shared devices.
-      Maximum local file size: 2 MB.
+      Maximum local JSON file size: 2 MB.
     </p>
 
     <div role="status" id="status" class="status">
@@ -95,9 +88,7 @@
   </aside>
 
   <div class="results">
-
     <section class="metrics">
-
       <div class="metric">
         <small>OBSERVATIONS</small>
         <strong id="eventsCount">—</strong>
@@ -121,25 +112,19 @@
         <strong id="conflictsCount">—</strong>
         <span>require human review</span>
       </div>
-
     </section>
 
     <nav class="tabs" aria-label="Investigation views">
-      <button type="button" data-view="timeline" class="active">
-        Timeline
-      </button>
+      <button type="button" data-view="timeline"
+        class="active">Timeline</button>
       <button type="button" data-view="evidence">
-        Evidence
-      </button>
+        Evidence</button>
       <button type="button" data-view="relationships">
-        Relationships
-      </button>
+        Relationships</button>
       <button type="button" data-view="report">
-        Review report
-      </button>
+        Review report</button>
       <button type="button" data-view="verify">
-        Verify file hash
-      </button>
+        Verify file hash</button>
     </nav>
 
     <div id="view" class="view" aria-live="polite">
@@ -147,14 +132,12 @@
         <span>✳</span>
         <h3>Ready to reconstruct</h3>
         <p>
-          Load the synthetic case or paste your own
+          Load a synthetic case or paste your own
           structured example.
         </p>
       </div>
     </div>
-
   </div>
-
 </section>
 
 <footer>
@@ -168,6 +151,7 @@
 
 <script type="module" src="app.mjs"></script>
 <script type="module" src="hypotheses-view.mjs"></script>
+<script type="module" src="sensitivity-view.mjs"></script>
 
 </body>
 </html>
