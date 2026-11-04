@@ -1,36 +1,49 @@
 import { reviewCase } from "./engine.mjs";
 import { analyzeHypotheses } from "./hypotheses.mjs";
 
-const scenario = {
+// Local processing only. No network requests.
+const demo = {
   case_id: "EFX-SYNTHETIC-ATTRIBUTION",
+
   evidence: [
-    { id: "BANK", source: "Bank statement" },
-    { id: "LOGIN", source: "Login audit export" },
+    { id: "BANK", source: "Bank transaction record" },
+    { id: "LOGIN", source: "Login audit record" },
     {
       id: "LOGIN_COPY",
-      source: "Login audit export",
+      source: "Login audit record",
       derived_from: "LOGIN"
     },
-    { id: "DEVICE", source: "Device forensic export" }
+    { id: "DEVICE", source: "Device forensic record" }
   ],
+
   events: [
     {
-      id: "EVENT1",
+      id: "EV1",
       timestamp: "2026-10-30T09:00:00+03:00",
-      description: "Synthetic login recorded",
+      description: "Synthetic login observed",
       evidence_ids: ["LOGIN"]
     },
     {
-      id: "EVENT2",
+      id: "EV2",
       timestamp: "2026-10-30T09:12:00+03:00",
-      description: "Synthetic transfer recorded",
+      description: "Synthetic payment observed",
       evidence_ids: ["BANK"]
     }
   ],
+
   links: [
-    { from: "LOGIN", to: "LOGIN_COPY", type: "derived_from" },
-    { from: "BANK", to: "DEVICE", type: "references" }
+    {
+      from: "LOGIN",
+      to: "LOGIN_COPY",
+      type: "derived_from"
+    },
+    {
+      from: "BANK",
+      to: "DEVICE",
+      type: "references"
+    }
   ],
+
   hypotheses: [
     {
       id: "H1",
@@ -39,130 +52,235 @@ const scenario = {
       challenges: ["DEVICE"],
       gaps: [{
         question: "Who controlled the device at transaction time?",
-        why: "Account ownership does not establish actual device use.",
+        why: "Account ownership does not establish device use.",
         discriminator: "device-control"
       }]
     },
     {
       id: "H2",
-      title: "Another person accessed the account",
+      title: "Another person operated the account",
       supports: ["LOGIN", "LOGIN_COPY"],
       challenges: [],
       gaps: [{
-        question: "Can device control be independently verified?",
-        why: "The login record does not identify the physical operator.",
+        question: "Can control of the device be independently verified?",
+        why: "A login does not identify the physical operator.",
         discriminator: "device-control"
       }]
     },
     {
       id: "H3",
-      title: "Available evidence cannot establish the operator",
+      title: "Operator cannot be established from supplied evidence",
       supports: ["BANK", "LOGIN"],
       challenges: [],
       gaps: [{
-        question: "Is independent operator evidence available?",
-        why: "The current records establish activity, not identity.",
+        question: "What independent attribution evidence is available?",
+        why: "Current evidence shows activity, not operator identity.",
         discriminator: "operator-attribution"
       }]
     }
   ]
 };
 
-function node(tag, text, className) {
-  const el = document.createElement(tag);
-  if (text !== undefined) el.textContent = text;
-  if (className) el.className = className;
-  return el;
+function el(tag, text, className) {
+  const item = document.createElement(tag);
+
+  if (text !== undefined) {
+    item.textContent = String(text);
+  }
+
+  if (className) item.className = className;
+  return item;
 }
 
-const section = node("section", undefined, "input");
-section.style.marginTop = "24px";
+const main = document.querySelector("main");
+const input = document.getElementById("caseData");
+
+if (!main || !input) {
+  throw Error("EvidenceForge workspace not found");
+}
+
+const section = el("section", undefined, "input");
 section.id = "hypothesis-workspace";
+section.style.marginTop = "24px";
 
-section.appendChild(node("small", "02 / REASONING LAB"));
-section.appendChild(node("h2", "Competing Hypotheses"));
-section.appendChild(node(
+section.append(
+  el("small", "02 / HYPOTHESIS LAB"),
+  el("h2", "Competing Hypotheses"),
+  el(
+    "p",
+    "Compare investigator-entered hypotheses from the case JSON above. No automated guilt assessment or artificial probabilities."
+  )
+);
+
+const toolbar = el("div", undefined, "actions");
+
+const load = el(
+  "button",
+  "Load advanced synthetic case"
+);
+
+const compare = el(
+  "button",
+  "Analyze current case",
+  "primary"
+);
+
+load.type = "button";
+compare.type = "button";
+
+toolbar.append(load, compare);
+section.append(toolbar);
+
+const status = el(
   "p",
-  "Compare alternative explanations without assigning guilt or artificial probabilities."
-));
+  "Your case JSON needs a hypotheses array."
+);
 
-const run = node("button", "Run hypothesis comparison", "primary");
-run.type = "button";
+status.setAttribute("role", "status");
+section.append(status);
 
-const output = node("div");
+const output = el("div");
 output.id = "hypothesis-results";
 output.setAttribute("aria-live", "polite");
 
-run.addEventListener("click", () => {
+section.append(output);
+main.append(section);
+
+function card(title, details, parent) {
+  const item = el(
+    "article",
+    undefined,
+    "evidence-entry"
+  );
+
+  item.append(el("h3", title));
+
+  for (const line of details) {
+    item.append(el("p", line));
+  }
+
+  parent.append(item);
+}
+
+function run() {
   output.replaceChildren();
 
   try {
-    const review = reviewCase(scenario);
-    const analysis = analyzeHypotheses(scenario, review);
+    if (input.value.length > 2 * 1024 * 1024) {
+      throw Error("Case exceeds 2 MB limit");
+    }
 
-    output.appendChild(node(
+    const doc = JSON.parse(input.value);
+
+    if (!Array.isArray(doc.hypotheses) ||
+        !doc.hypotheses.length) {
+      throw Error(
+        "No hypotheses found. Add hypotheses or load the advanced example."
+      );
+    }
+
+    const reviewed = reviewCase(doc);
+    const result = analyzeHypotheses(
+      doc,
+      reviewed
+    );
+
+    status.textContent =
+      `Reviewed ${result.hypotheses.length} hypotheses for ${result.case_id}. All remain unresolved.`;
+
+    output.append(el(
       "h3",
-      `${analysis.hypotheses.length} competing explanations`
+      `${result.hypotheses.length} competing explanations`
     ));
 
-    for (const h of analysis.hypotheses) {
-      const card = node("article", undefined, "evidence-entry");
-      card.appendChild(node("h3", `${h.id} — ${h.title}`));
-
-      card.appendChild(node(
-        "p",
+    for (const h of result.hypotheses) {
+      const details = [
         `Supporting evidence: ${
-          h.supporting_evidence.map(e => e.id).join(", ") || "None supplied"
-        }`
-      ));
+          h.supporting_evidence.map(e => e.id).join(", ") ||
+          "None supplied"
+        }`,
 
-      card.appendChild(node(
-        "p",
         `Challenging evidence: ${
-          h.challenging_evidence.map(e => e.id).join(", ") || "None supplied"
-        }`
-      ));
+          h.challenging_evidence.map(e => e.id).join(", ") ||
+          "None supplied"
+        }`,
 
-      card.appendChild(node(
-        "p",
-        `Distinct support roots: ${h.independent_support_roots.length}`
-      ));
+        `Distinct source roots supplied: ${
+          h.independent_support_roots.length
+        } (not a statistical independence measure)`,
 
-      for (const gap of h.unanswered_questions) {
-        card.appendChild(node("p", `Missing evidence: ${gap.question}`));
-      }
+        ...h.unanswered_questions.map(g =>
+          `Investigative question: ${g.question} — ${g.why}`
+        ),
 
-      for (const warning of h.warnings) {
-        card.appendChild(node("p", `Caution: ${warning}`));
-      }
+        ...h.warnings.map(w =>
+          `Caution: ${w}`
+        )
+      ];
 
-      output.appendChild(card);
+      card(
+        `${h.id} — ${h.title}`,
+        details,
+        output
+      );
     }
 
-    output.appendChild(node("h3", "Investigative priorities"));
+    output.append(el(
+      "h3",
+      "Investigative priorities"
+    ));
 
-    for (const q of analysis.prioritized_questions) {
-      output.appendChild(node(
+    if (!result.prioritized_questions.length) {
+      output.append(el(
         "p",
-        `${q.question} — Relevant to ${
-          q.cross_hypothesis_relevance
-        } hypothesis group(s).`
+        "No investigative questions supplied."
       ));
     }
 
-    output.appendChild(node(
+    for (const q of result.prioritized_questions) {
+      card(q.question, [
+        `Hypothesis: ${q.hypothesis_id}`,
+        `Reason: ${q.why}`,
+        `Shared discriminator: ${q.discriminator} (${q.cross_hypothesis_relevance} hypotheses)`
+      ], output);
+    }
+
+    output.append(el(
       "p",
-      "Synthetic demonstration only. All hypotheses remain unresolved."
+      "Structured consistency review only. Not an automated attribution or finding of fact."
     ));
 
   } catch (error) {
-    output.replaceChildren();
-    output.appendChild(node(
+    status.textContent =
+      `Unable to analyze: ${error.message}`;
+
+    output.replaceChildren(el(
       "p",
-      `Analysis error: ${error.message}`
+      "Check the JSON and evidence references. No results were produced."
     ));
   }
+}
+
+load.addEventListener("click", () => {
+  if (
+    input.value.trim() &&
+    !window.confirm(
+      "Replace current JSON with synthetic demonstration data?"
+    )
+  ) {
+    return;
+  }
+
+  input.value = JSON.stringify(
+    demo,
+    null,
+    2
+  );
+
+  status.textContent =
+    "Advanced case loaded. Select Analyze current case.";
+
+  output.replaceChildren();
 });
 
-section.append(run, output);
-document.querySelector("main")?.appendChild(section);
+compare.addEventListener("click", run);
