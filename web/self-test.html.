@@ -1,168 +1,80 @@
-
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
 <meta http-equiv="Content-Security-Policy"
-content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; object-src 'none'">
-<title>EvidenceForge X | Self-Test</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;padding:22px;background:#081120;color:#edf5ff;font:16px system-ui,sans-serif}
-main{max-width:850px;margin:auto}
-h1{font-size:28px}
-p{line-height:1.6;color:#aebed0}
-button{padding:15px 24px;background:#27bbaa;color:#061320;border:0;border-radius:10px;font-size:17px;font-weight:700}
-#summary{font-size:21px;font-weight:700;margin:25px 0}
-article{margin:10px 0;padding:15px;background:#14243a;border:1px solid #35445c;border-radius:10px}
-.pass{border-left:5px solid #27bbaa}
-.fail{border-left:5px solid #ef7474}
-small{display:block;color:#acbad0;margin-top:5px;overflow-wrap:anywhere}
-</style>
+content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<title>EvidenceForge X | Test Lab</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<header class="top">
+<div class="brand">
+<span class="mark">✳</span>
+<div>
+<strong>EVIDENCEFORGE <em>X</em></strong>
+<small>INTEGRATION TEST LAB</small>
+</div>
+</div>
+</header>
+
 <main>
-<h1>EvidenceForge X</h1>
-<p>Independent Browser Integration Test Lab</p>
-<p>Uses synthetic evidence only. No case data is uploaded. This tests deterministic behavior, not investigative accuracy or production security.</p>
-<button id="run" type="button">Run all tests</button>
-<div id="summary" role="status">Tests not started</div>
-<section id="results" aria-live="polite"></section>
+
+<section class="intro">
+<div class="eyebrow">
+ENGINE VALIDATION / SYNTHETIC DATA ONLY
+</div>
+<h1>
+EvidenceForge X
+<span>Quality Assurance Lab</span>
+</h1>
+<p>
+Automated browser tests for case review,
+timeline normalization, evidence provenance,
+competing hypotheses, evidence exclusion,
+and explainable investigation.
+</p>
+<p>
+All tests run locally. No real case evidence,
+network uploads, guilt assessments or
+probability estimates are involved.
+</p>
+</section>
+
+<section class="input">
+<div class="sectionhead">
+<div>
+<small>01 / VALIDATION</small>
+<h2>Integration Test Suite</h2>
+</div>
+<span class="pill">14 TESTS</span>
+</div>
+
+<div class="actions">
+<button class="primary" id="runTests" type="button">
+Run all 14 tests
+</button>
+</div>
+
+<p id="testStatus" role="status">
+Ready to start.
+</p>
+<div id="testResults" aria-live="polite"></div>
+</section>
+
+<footer>
+<span>EvidenceForge X • Test Laboratory</span>
+<span>
+Local execution • Synthetic data • Human review
+</span>
+</footer>
+
 </main>
 
-<script type="module">
-import {reviewCase,normalizeTime} from "./engine.mjs";
-import {analyzeHypotheses} from "./hypotheses.mjs";
-import {auditEvidenceDependence} from "./sensitivity.mjs";
-import {explainCase} from "../explainability.mjs";
+<script type="module" src="self-test.mjs"></script>
 
-const $=id=>document.getElementById(id);
-
-function sample(){
-return {
-case_id:"EFX-BROWSER-TEST",
-evidence:[
-{id:"BANK",source:"Bank",sha256:"a".repeat(64)},
-{id:"LOGIN",source:"Device"},
-{id:"COPY",source:"Device",derived_from:"LOGIN"},
-{id:"OTHER",source:"Device",sha256:"b".repeat(64)}
-],
-events:[
-{id:"EV2",timestamp:"2026-10-30T10:00:00+03:00",description:"Payment",evidence_ids:["BANK"]},
-{id:"EV1",timestamp:"2026-10-30T08:00:00+03:00",description:"Login",evidence_ids:["LOGIN"]}
-],
-links:[{from:"BANK",to:"LOGIN",type:"contradicts"}],
-hypotheses:[
-{id:"H1",title:"Account owner",supports:["BANK"],challenges:["LOGIN"],gaps:[]},
-{id:"H2",title:"Other operator",supports:["LOGIN","COPY"],challenges:[],gaps:[]}
-]
-};
-}
-
-function check(ok,message){
-if(!ok)throw Error(message);
-}
-
-function expectError(fn){
-let rejected=false;
-try{fn()}catch{rejected=true}
-check(rejected,"Invalid input was accepted");
-}
-
-const tests=[
-["Case validation",()=>{
-check(reviewCase(sample()).evidence.length===4,"Wrong evidence count");
-}],
-["Chronological sorting",()=>{
-check(reviewCase(sample()).timeline[0].id==="EV1","Wrong event order");
-}],
-["Timezone normalization",()=>{
-check(normalizeTime("2026-10-30T10:00:00+03:00")==="2026-10-30T07:00:00Z","Wrong UTC time");
-}],
-["Distinct provenance origins",()=>{
-check(reviewCase(sample()).source_groups.length===3,"Unrelated evidence grouped together");
-}],
-["Derived evidence grouping",()=>{
-const group=reviewCase(sample()).source_groups.find(x=>x.root_evidence_id==="LOGIN");
-check(group?.evidence_ids.includes("COPY"),"Derived evidence missing");
-}],
-["Invalid parent rejection",()=>{
-const d=sample();d.evidence[2].derived_from="MISSING";
-expectError(()=>reviewCase(d));
-}],
-["Cycle rejection",()=>{
-const d=sample();d.evidence[1].derived_from="COPY";
-expectError(()=>reviewCase(d));
-}],
-["Competing hypotheses",()=>{
-const d=sample();const r=analyzeHypotheses(d,reviewCase(d));
-check(r.hypotheses.length===2,"Hypotheses missing");
-}],
-["No double counting copied evidence",()=>{
-const d=sample();const r=analyzeHypotheses(d,reviewCase(d));
-check(r.hypotheses[1].independent_support_roots.length===1,"Copies counted as different roots");
-}],
-["Hypothetical exclusion",()=>{
-const r=auditEvidenceDependence(sample(),"LOGIN");
-check(r.total_excluded_items===2,"Incorrect exclusion count");
-check(r.automatically_excluded_descendants.includes("COPY"),"Derivative not excluded");
-}],
-["Declared contradiction",()=>{
-const d=sample();const r=explainCase(d,reviewCase(d));
-check(r.findings.some(x=>x.code==="DECLARED_CONTRADICTION"),"Declaration not reported");
-}],
-["Influential evidence",()=>{
-const d=sample();const r=explainCase(d,reviewCase(d));
-check(r.decisive_candidates.some(x=>x.root_evidence_id==="LOGIN"&&x.hypothesis_count===2),"Shared impact missing");
-}],
-["Duplicate hypothesis rejection",()=>{
-const d=sample();d.hypotheses[1].id="H1";
-expectError(()=>explainCase(d,reviewCase(d)));
-}],
-["Source document unchanged",()=>{
-const d=sample();const before=JSON.stringify(d);
-const review=reviewCase(d);
-analyzeHypotheses(d,review);
-auditEvidenceDependence(d,"LOGIN");
-explainCase(d,review);
-check(JSON.stringify(d)===before,"Case was mutated");
-}]
-];
-
-function resultLine(name,passed,message){
-const item=document.createElement("article");
-item.className=passed?"pass":"fail";
-const title=document.createElement("strong");
-title.textContent=(passed?"PASS — ":"FAIL — ")+name;
-item.append(title);
-if(message){
-const extra=document.createElement("small");
-extra.textContent=message;
-item.append(extra);
-}
-$("results").append(item);
-}
-
-$("run").addEventListener("click",()=>{
-$("results").replaceChildren();
-let passed=0;
-for(const [name,fn] of tests){
-try{
-fn();
-passed++;
-resultLine(name,true);
-}catch(e){
-resultLine(name,false,e.message);
-}
-}
-$("summary").textContent=
-`${passed} / ${tests.length} tests passed`;
-$("summary").style.color=
-passed===tests.length?"#42d5bd":"#ff9292";
-});
-
-$("summary").textContent="Ready — 14 tests available";
-</script>
 </body>
 </html>
