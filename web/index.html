@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<title>EvidenceForge X | Investigation Workspace</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+<div class="brand"><span class="mark">✳</span><div><strong>EVIDENCEFORGE <em>X</em></strong><small>INVESTIGATION WORKSPACE / LOCAL DEMO</small></div></div>
+<div class="topright"><span class="privacy">● BROWSER-LOCAL · NO UPLOAD</span><button id="loadDemo" class="ghost">Load synthetic demo</button></div>
+</header>
+<main>
+<section class="intro">
+<div class="eyebrow">TRACE THE STORY. PRESERVE THE UNCERTAINTY.</div>
+<h1>Evidence reconstruction,<br><span>with every assumption visible.</span></h1>
+<p>Review chronological observations, evidence relationships and provenance. This prototype uses deterministic rules — it does not determine culpability.</p>
+</section>
+<section class="workspace">
+<aside class="input">
+<div class="sectionhead"><div><small>01 / IMPORT</small><h2>Case evidence</h2></div><span class="pill">JSON</span></div>
+<label for="caseData">Paste a case JSON document or select a local file.</label>
+<textarea id="caseData" spellcheck="false" aria-label="Case JSON"></textarea>
+<div class="actions">
+<label class="upload" for="fileInput">↑ Open JSON</label>
+<input type="file" accept=".json,application/json" id="fileInput">
+<button class="primary" id="analyze">Analyze case →</button>
+</div>
+<p class="hint">Analysis runs within this browser tab. Do not use real case files on shared devices. Maximum local file size: 2 MB.</p>
+<div role="status" id="status" class="status">Load a sample to get started.</div>
+</aside>
+<div class="results">
+<section class="metrics">
+<div class="metric"><small>OBSERVATIONS</small><strong id="eventsCount">—</strong><span>timestamped events</span></div>
+<div class="metric"><small>EVIDENCE ITEMS</small><strong id="evidenceCount">—</strong><span>linked artifacts</span></div>
+<div class="metric"><small>SOURCE GROUPS</small><strong id="sourcesCount">—</strong><span>conservative independence</span></div>
+<div class="metric warn"><small>CONTRADICTIONS</small><strong id="conflictsCount">—</strong><span>require human review</span></div>
+</section>
+<nav class="tabs" aria-label="Investigation views">
+<button data-view="timeline" class="active">Timeline</button>
+<button data-view="evidence">Evidence</button>
+<button data-view="relationships">Relationships</button>
+<button data-view="report">Review report</button>
+<button data-view="verify">Verify file hash</button>
+</nav>
+<div id="view" class="view" aria-live="polite"><div class="empty"><span>✳</span><h3>Ready to reconstruct</h3><p>Load the synthetic case or paste your own structured example.</p></div></div>
+</div>
+</section>
+<footer><span>EvidenceForge X • V10 release audit candidate</span><span>Browser-local • No telemetry • No automated attribution</span></footer>
+</main>
+<script type="module" src="app.mjs"></script>
+</body>
+</html>
